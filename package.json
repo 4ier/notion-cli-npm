@@ -1,0 +1,28 @@
+{
+  "name": "notion-cli-go",
+  "version": "0.2.0",
+  "description": "Full-featured CLI for Notion. Like gh for GitHub, but for Notion. 39 commands, one binary.",
+  "keywords": ["notion", "cli", "notion-api", "database", "productivity", "agent"],
+  "homepage": "https://github.com/4ier/notion-cli",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/4ier/notion-cli.git"
+  },
+  "license": "MIT",
+  "author": "Fourier <yang.fourier@gmail.com>",
+  "bin": {
+    "notion": "bin/notion"
+  },
+  "scripts": {
+    "postinstall": "node install.js"
+  },
+  "files": [
+    "bin/",
+    "install.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=16"
+  }
+}
