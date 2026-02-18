@@ -1,2 +1,4 @@
 #!/bin/sh
-exec "$(dirname "$0")/../bin/notion" "$@"
+# Wrapper script for notion-cli installed via npm postinstall
+basedir=$(cd "$(dirname "$0")" && pwd)
+exec "$basedir/notion-bin" "$@"

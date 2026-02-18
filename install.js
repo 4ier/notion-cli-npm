@@ -4,9 +4,7 @@ const { execFileSync } = require("child_process");
 const { createWriteStream, chmodSync, mkdirSync, existsSync, unlinkSync } = require("fs");
 const { get } = require("https");
 const { join } = require("path");
-const { pipeline } = require("stream/promises");
-const { createGunzip } = require("zlib");
-const tar = require("tar"); // We'll handle without tar dependency
+const { renameSync } = require("fs");
 
 const VERSION = require("./package.json").version;
 const REPO = "4ier/notion-cli";
@@ -53,10 +51,11 @@ async function install() {
   const { os, cpu } = getPlatform();
   const url = getDownloadURL(os, cpu);
   const binDir = join(__dirname, "bin");
-  const binName = os === "windows" ? "notion.exe" : "notion";
-  const binPath = join(binDir, binName);
+  const srcName = os === "windows" ? "notion.exe" : "notion";
+  const destName = os === "windows" ? "notion-bin.exe" : "notion-bin";
+  const destPath = join(binDir, destName);
 
-  if (existsSync(binPath)) {
+  if (existsSync(destPath)) {
     console.log("notion-cli already installed");
     return;
   }
@@ -68,7 +67,6 @@ async function install() {
   const stream = await download(url);
 
   if (os === "windows") {
-    // For zip, download to temp file and extract
     const tmpPath = join(binDir, "tmp.zip");
     const file = createWriteStream(tmpPath);
     await new Promise((resolve, reject) => {
@@ -76,9 +74,8 @@ async function install() {
       file.on("finish", resolve);
       file.on("error", reject);
     });
-    // Use unzip command or built-in
     try {
-      execFileSync("unzip", ["-o", tmpPath, binName, "-d", binDir]);
+      execFileSync("unzip", ["-o", tmpPath, srcName, "-d", binDir]);
     } catch {
       execFileSync("powershell", [
         "-Command",
@@ -87,7 +84,6 @@ async function install() {
     }
     unlinkSync(tmpPath);
   } else {
-    // tar.gz: pipe through gunzip and extract
     const tmpPath = join(binDir, "tmp.tar.gz");
     const file = createWriteStream(tmpPath);
     await new Promise((resolve, reject) => {
@@ -95,12 +91,18 @@ async function install() {
       file.on("finish", resolve);
       file.on("error", reject);
     });
-    execFileSync("tar", ["xzf", tmpPath, "-C", binDir, binName]);
+    execFileSync("tar", ["xzf", tmpPath, "-C", binDir, srcName]);
     unlinkSync(tmpPath);
   }
 
+  // Rename to notion-bin to avoid collision with the shell wrapper
+  const srcPath = join(binDir, srcName);
+  if (existsSync(srcPath)) {
+    renameSync(srcPath, destPath);
+  }
+
   if (os !== "windows") {
-    chmodSync(binPath, 0o755);
+    chmodSync(destPath, 0o755);
   }
 
   console.log(`notion-cli v${VERSION} installed successfully`);
