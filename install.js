@@ -74,15 +74,23 @@ async function install() {
       file.on("finish", resolve);
       file.on("error", reject);
     });
+    // Extract to a temp dir first to avoid overwriting bin/notion.cmd wrapper
+    const tmpDir = join(binDir, "_tmp_extract");
+    mkdirSync(tmpDir, { recursive: true });
     try {
-      execFileSync("unzip", ["-o", tmpPath, srcName, "-d", binDir]);
+      execFileSync("unzip", ["-o", tmpPath, srcName, "-d", tmpDir]);
     } catch {
       execFileSync("powershell", [
         "-Command",
-        `Expand-Archive -Path '${tmpPath}' -DestinationPath '${binDir}' -Force`,
+        `Expand-Archive -Path '${tmpPath}' -DestinationPath '${tmpDir}' -Force`,
       ]);
     }
     unlinkSync(tmpPath);
+    const extractedPath = join(tmpDir, srcName);
+    if (existsSync(extractedPath)) {
+      renameSync(extractedPath, destPath);
+    }
+    try { require("fs").rmdirSync(tmpDir, { recursive: true }); } catch {}
   } else {
     const tmpPath = join(binDir, "tmp.tar.gz");
     const file = createWriteStream(tmpPath);
@@ -91,14 +99,16 @@ async function install() {
       file.on("finish", resolve);
       file.on("error", reject);
     });
-    execFileSync("tar", ["xzf", tmpPath, "-C", binDir, srcName]);
+    // Extract to a temp dir first to avoid overwriting the shell wrapper (bin/notion)
+    const tmpDir = join(binDir, "_tmp_extract");
+    mkdirSync(tmpDir, { recursive: true });
+    execFileSync("tar", ["xzf", tmpPath, "-C", tmpDir, srcName]);
     unlinkSync(tmpPath);
-  }
-
-  // Rename to notion-bin to avoid collision with the shell wrapper
-  const srcPath = join(binDir, srcName);
-  if (existsSync(srcPath)) {
-    renameSync(srcPath, destPath);
+    const extractedPath = join(tmpDir, srcName);
+    if (existsSync(extractedPath)) {
+      renameSync(extractedPath, destPath);
+    }
+    try { require("fs").rmdirSync(tmpDir); } catch {}
   }
 
   if (os !== "windows") {
