@@ -1,6 +1,6 @@
 {
   "name": "@4ier/notion-cli",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Full-featured CLI for Notion. Like gh for GitHub, but for Notion. 44 commands, one binary.",
   "keywords": [
     "notion",
